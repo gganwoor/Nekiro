@@ -66,14 +66,27 @@ public class TrajectoryDrawer : MonoBehaviour
         isDrawing = false;
 
         EnemyAttack enemy = FindObjectOfType<EnemyAttack>();
+        EnemyStats enemyStats = FindObjectOfType<EnemyStats>();
+        PlayerStats playerStats = FindObjectOfType<PlayerStats>();
+
         if(enemy != null && enemy.isWarningActive)
         {
             bool parrySuccess = JudgementSystem.CheckParry(points, enemy.attackStart, enemy.attackEnd);
 
             if(parrySuccess)
+            {
                 Debug.Log("성공");
+                enemyStats.UseStamina(20f);
+                playerStats.RecoverStamina(10f);
+                CameraShake.instance.Shake(0.15f, 0.1f);
+                HitStop.instance.Stop(0.08f);
+            }
             else
+            {
                 Debug.Log("실패");
+                playerStats.UseStamina(20f);
+                CameraShake.instance.Shake(0.3f, 0.2f);
+            }
         }
     }
 }

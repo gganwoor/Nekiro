@@ -38,11 +38,6 @@ public class EnemyStats : MonoBehaviour
         UpdateUI();
     }
 
-    void Update()
-    {
-        UpdateUI();
-    }
-
     void UpdateUI()
     {
         if (hpBar != null)
