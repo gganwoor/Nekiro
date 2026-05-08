@@ -1,0 +1,79 @@
+using System.Collections.Generic;
+using UnityEngine;
+
+public class TrajectoryDrawer : MonoBehaviour
+{
+    [Header("Line Settings")]
+    public float lineWidth = 0.05f;
+    public Color lineColor = Color.white;
+    public float minPointDistance = 0.1f;
+
+    private LineRenderer lineRenderer;
+    private List<Vector3> points = new List<Vector3>();
+    private bool isDrawing = false;
+
+    void Awake()
+    {
+        lineRenderer = gameObject.AddComponent<LineRenderer>();
+        lineRenderer.startWidth = lineWidth;
+        lineRenderer.endWidth = lineWidth;
+        lineRenderer.material = new Material(Shader.Find("Sprites/Default"));
+        lineRenderer.startColor = lineColor;
+        lineRenderer.endColor = lineColor;
+        lineRenderer.positionCount = 0;
+    }
+
+    void Update()
+    {
+        if (Input.GetMouseButtonDown(0))
+        {
+            StartDrawing();
+        }
+
+        if (Input.GetMouseButton(0) && isDrawing)
+        {
+            AddPoint();
+        }
+
+        if (Input.GetMouseButtonUp(0) && isDrawing)
+        {
+            FinishDrawing();
+        }
+    }
+
+    void StartDrawing()
+    {
+        isDrawing = true;
+        points.Clear();
+        lineRenderer.positionCount = 0;
+    }
+
+    void AddPoint()
+    {
+        Vector3 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+        mousePos.z = 0f;
+
+        if (points.Count > 0 && Vector3.Distance(mousePos, points[points.Count - 1]) < minPointDistance)
+            return;
+
+        points.Add(mousePos);
+        lineRenderer.positionCount = points.Count;
+        lineRenderer.SetPositions(points.ToArray());
+    }
+
+    void FinishDrawing()
+    {
+        isDrawing = false;
+
+        EnemyAttack enemy = FindObjectOfType<EnemyAttack>();
+        if(enemy != null && enemy.isWarningActive)
+        {
+            bool parrySuccess = JudgementSystem.CheckParry(points, enemy.attackStart, enemy.attackEnd);
+
+            if(parrySuccess)
+                Debug.Log("성공");
+            else
+                Debug.Log("실패");
+        }
+    }
+}
