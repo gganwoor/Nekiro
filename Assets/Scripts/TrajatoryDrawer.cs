@@ -11,6 +11,7 @@ public class TrajectoryDrawer : MonoBehaviour
     private LineRenderer lineRenderer;
     private List<Vector3> points = new List<Vector3>();
     private bool isDrawing = false;
+    private bool drawingEnabled = false;
 
     void Awake()
     {
@@ -25,6 +26,8 @@ public class TrajectoryDrawer : MonoBehaviour
 
     void Update()
     {
+        if (!drawingEnabled) return;
+
         if (Input.GetMouseButtonDown(0))
         {
             StartDrawing();
@@ -37,7 +40,8 @@ public class TrajectoryDrawer : MonoBehaviour
 
         if (Input.GetMouseButtonUp(0) && isDrawing)
         {
-            FinishDrawing();
+            isDrawing = false;
+            lineRenderer.positionCount = 0;
         }
     }
 
@@ -61,19 +65,27 @@ public class TrajectoryDrawer : MonoBehaviour
         lineRenderer.SetPositions(points.ToArray());
     }
 
-    void FinishDrawing()
+    public void SetDrawingEnabled(bool enabled)
     {
-        isDrawing = false;
+        drawingEnabled = enabled;
+        if (!enabled)
+        {
+            isDrawing = false;
+            lineRenderer.positionCount = 0;
+        }
+    }
 
+    public void ExecuteJudgement()
+    {
         EnemyAttack enemy = FindObjectOfType<EnemyAttack>();
         EnemyStats enemyStats = FindObjectOfType<EnemyStats>();
         PlayerStats playerStats = FindObjectOfType<PlayerStats>();
 
-        if(enemy != null && enemy.isWarningActive)
+        if (enemy != null)
         {
             bool parrySuccess = JudgementSystem.CheckParry(points, enemy.attackStart, enemy.attackEnd);
 
-            if(parrySuccess)
+            if (parrySuccess)
             {
                 Debug.Log("성공");
                 enemyStats.UseStamina(20f);
@@ -86,7 +98,10 @@ public class TrajectoryDrawer : MonoBehaviour
                 Debug.Log("실패");
                 playerStats.UseStamina(20f);
                 CameraShake.instance.Shake(0.3f, 0.2f);
+                VignetteEffect.instance.Flash();
             }
         }
+
+        points.Clear();
     }
 }

@@ -1,7 +1,5 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 public class EnemyAttack : MonoBehaviour
 {
@@ -27,12 +25,9 @@ public class EnemyAttack : MonoBehaviour
         warningLine.positionCount = 2;
     }
 
-    void Update()
+    public void StartAttack()
     {
-        if(Keyboard.current.spaceKey.wasPressedThisFrame)
-        {
-            StartCoroutine(ShowWarning());
-        }
+        StartCoroutine(ShowWarning());
     }
 
     IEnumerator ShowWarning()
@@ -54,6 +49,5 @@ public class EnemyAttack : MonoBehaviour
 
         isWarningActive = false;
         warningLine.enabled = false;
-        Debug.Log("공격ㅁㄴㅇㄹ");
     }
 }
