@@ -252,7 +252,7 @@ MonoBehaviour:
   targetScene: 
   leftX: 0
   centerX: -40
-  rightX: 360
+  rightX: 720
   moveSpeed: 6
   fadeDuration: 0.4
   normalFontSize: 60
@@ -963,6 +963,7 @@ GameObject:
   - component: {fileID: 957506578}
   - component: {fileID: 957506577}
   - component: {fileID: 957506580}
+  - component: {fileID: 957506581}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -1088,6 +1089,19 @@ MonoBehaviour:
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
   m_Version: 2
+--- !u!114 &957506581
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 957506576}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75a56afb89a804dff88dda1ff79ad786, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LetterboxScaler
+  targetAspect: 1.7777778
 --- !u!1 &1103461030
 GameObject:
   m_ObjectHideFlags: 0
@@ -1194,13 +1208,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MenuButton
   icon: {fileID: 28331421}
   buttonText: {fileID: 2006386693}
-  fadePanel: {fileID: 0}
-  targetScene: 
+  fadePanel: {fileID: 2052577432}
+  targetScene: Main
   leftX: 0
   centerX: -40
-  rightX: 360
+  rightX: 720
   moveSpeed: 6
-  fadeDuration: 0.4
+  fadeDuration: 1
   normalFontSize: 72
   hoverFontSize: 85
   normalTextColor: {r: 0, g: 0, b: 0, a: 1}
@@ -1497,6 +1511,7 @@ RectTransform:
   - {fileID: 34563012}
   - {fileID: 2139483536}
   - {fileID: 1334887158}
+  - {fileID: 2052577431}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -1869,6 +1884,81 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2006386691}
   m_CullTransparentMesh: 1
+--- !u!1 &2052577430
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2052577431}
+  - component: {fileID: 2052577433}
+  - component: {fileID: 2052577432}
+  m_Layer: 5
+  m_Name: FadePanel
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &2052577431
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2052577430}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1478865091}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &2052577432
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2052577430}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
+  m_Material: {fileID: 0}
+  m_Color: {r: 0, g: 0, b: 0, a: 0}
+  m_RaycastTarget: 0
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 0}
+  m_Type: 0
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
+--- !u!222 &2052577433
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2052577430}
+  m_CullTransparentMesh: 1
 --- !u!1 &2139483535
 GameObject:
   m_ObjectHideFlags: 0
@@ -1927,7 +2017,7 @@ MonoBehaviour:
   targetScene: 
   leftX: 0
   centerX: -40
-  rightX: 360
+  rightX: 720
   moveSpeed: 6
   fadeDuration: 0.4
   normalFontSize: 66
