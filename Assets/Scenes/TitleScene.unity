@@ -248,8 +248,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MenuButton
   icon: {fileID: 228681504}
   buttonText: {fileID: 783852866}
-  fadePanel: {fileID: 0}
-  targetScene: 
+  fadePanel: {fileID: 2052577432}
+  targetScene: HTP_Tutorial
   leftX: 0
   centerX: -40
   rightX: 720
@@ -1348,7 +1348,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MenuButton
   icon: {fileID: 1136023294}
   buttonText: {fileID: 629493182}
-  fadePanel: {fileID: 0}
+  fadePanel: {fileID: 2052577432}
   targetScene: 
   leftX: 0
   centerX: -20
@@ -2013,7 +2013,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MenuButton
   icon: {fileID: 756139366}
   buttonText: {fileID: 1907628806}
-  fadePanel: {fileID: 0}
+  fadePanel: {fileID: 2052577432}
   targetScene: 
   leftX: 0
   centerX: -40

@@ -27,14 +27,12 @@ public class VignetteEffect : MonoBehaviour
     IEnumerator FlashRoutine()
     {
         Color color = new Color(1f, 0f, 0f, maxAlpha);
-        vignetteImage.color = color;
-
         while (color.a > 0f)
         {
-            color.a -= Time.deltaTime * fadeSpeed;
-            color.a = Mathf.Max(color.a, 0f);
             vignetteImage.color = color;
             yield return null;
+            color.a = Mathf.Max(color.a - Time.deltaTime * fadeSpeed, 0f);
         }
+        vignetteImage.color = new Color(1f, 0f, 0f, 0f);
     }
 }

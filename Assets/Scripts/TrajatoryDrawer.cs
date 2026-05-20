@@ -13,6 +13,10 @@ public class TrajectoryDrawer : MonoBehaviour
     private bool isDrawing = false;
     private bool drawingEnabled = false;
 
+    private PlayerStats playerStats;
+    private EnemyAttack enemyAttack;
+    private EnemyStats enemyStats;
+
     void Awake()
     {
         lineRenderer = gameObject.AddComponent<LineRenderer>();
@@ -24,25 +28,45 @@ public class TrajectoryDrawer : MonoBehaviour
         lineRenderer.positionCount = 0;
     }
 
+    void Start()
+    {
+        playerStats = FindObjectOfType<PlayerStats>();
+        enemyAttack = FindObjectOfType<EnemyAttack>();
+        enemyStats = FindObjectOfType<EnemyStats>();
+    }
+
+    [HideInInspector] public bool isReadyToJudge = false;
+
     void Update()
     {
         if (!drawingEnabled) return;
 
         if (Input.GetMouseButtonDown(0))
         {
+            if (playerStats != null && playerStats.currentStamina <= 0)
+            {
+                CameraShake.instance.Shake(0.15f, 0.05f);
+                VignetteEffect.instance.Flash();
+                return;
+            }
             StartDrawing();
         }
 
         if (Input.GetMouseButton(0) && isDrawing)
-        {
             AddPoint();
-        }
 
         if (Input.GetMouseButtonUp(0) && isDrawing)
         {
             isDrawing = false;
             lineRenderer.positionCount = 0;
+            isReadyToJudge = true;
         }
+    }
+
+    public void ResetJudgement()
+    {
+        isReadyToJudge = false;
+        points.Clear();
     }
 
     void StartDrawing()
@@ -77,29 +101,31 @@ public class TrajectoryDrawer : MonoBehaviour
 
     public void ExecuteJudgement()
     {
-        EnemyAttack enemy = FindObjectOfType<EnemyAttack>();
-        EnemyStats enemyStats = FindObjectOfType<EnemyStats>();
-        PlayerStats playerStats = FindObjectOfType<PlayerStats>();
+        if (enemyAttack == null) return;
 
-        if (enemy != null)
+        bool parrySuccess = JudgementSystem.CheckParry(points, enemyAttack.attackStart, enemyAttack.attackEnd);
+
+        if (parrySuccess)
         {
-            bool parrySuccess = JudgementSystem.CheckParry(points, enemy.attackStart, enemy.attackEnd);
-
-            if (parrySuccess)
-            {
-                Debug.Log("성공");
+            Debug.Log("패링 성공");
+            if (enemyStats.currentStamina > 0)
                 enemyStats.UseStamina(20f);
-                playerStats.RecoverStamina(10f);
-                CameraShake.instance.Shake(0.15f, 0.1f);
-                HitStop.instance.Stop(0.08f);
-            }
             else
-            {
-                Debug.Log("실패");
+                enemyStats.TakeDamage(20f);
+            playerStats.RecoverStamina(10f);
+            EnemyHitFlash.instance?.Flash();
+            CameraShake.instance.Shake(0.15f, 0.1f);
+            HitStop.instance.Stop(0.08f);
+        }
+        else
+        {
+            Debug.Log("패링 실패");
+            if (playerStats.currentStamina > 0)
                 playerStats.UseStamina(20f);
-                CameraShake.instance.Shake(0.3f, 0.2f);
-                VignetteEffect.instance.Flash();
-            }
+            else
+                playerStats.TakeDamage(30f);
+            CameraShake.instance.Shake(0.3f, 0.2f);
+            VignetteEffect.instance.Flash();
         }
 
         points.Clear();
