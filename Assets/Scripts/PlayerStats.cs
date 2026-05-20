@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.UI;
 
 public class PlayerStats : MonoBehaviour
 {
@@ -9,28 +8,17 @@ public class PlayerStats : MonoBehaviour
     public float maxStamina = 100f;
     public float currentStamina;
 
+    [Header("스태미나 회복")]
+    public float staminaRegenRate = 8f;
+
     [Header("UI연결")]
-    public Image hpBar;
-    public Image staminaBar;
+    public RectTransform hpBar;
+    public RectTransform staminaBar;
 
     void Start()
     {
         currentHP = maxHP;
         currentStamina = maxStamina;
-
-        if (hpBar != null)
-        {
-            hpBar.type = UnityEngine.UI.Image.Type.Filled;
-            hpBar.fillMethod = UnityEngine.UI.Image.FillMethod.Horizontal;
-            hpBar.fillOrigin = 0;
-        }
-        if (staminaBar != null)
-        {
-            staminaBar.type = UnityEngine.UI.Image.Type.Filled;
-            staminaBar.fillMethod = UnityEngine.UI.Image.FillMethod.Horizontal;
-            staminaBar.fillOrigin = 0;
-        }
-
         UpdateUI();
     }
 
@@ -64,8 +52,8 @@ public class PlayerStats : MonoBehaviour
     void UpdateUI()
     {
         if (hpBar != null)
-            hpBar.fillAmount = currentHP / maxHP;
+            hpBar.localScale = new Vector3(currentHP / maxHP, 1f, 1f);
         if (staminaBar != null)
-            staminaBar.fillAmount = currentStamina / maxStamina;
+            staminaBar.localScale = new Vector3(currentStamina / maxStamina, 1f, 1f);
     }
 }
