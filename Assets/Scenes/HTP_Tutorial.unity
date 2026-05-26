@@ -8760,6 +8760,7 @@ GameObject:
   - component: {fileID: 2014893182}
   - component: {fileID: 2014893183}
   - component: {fileID: 2014893184}
+  - component: {fileID: 2014893185}
   m_Layer: 0
   m_Name: Enemy
   m_TagString: Untagged
@@ -8804,6 +8805,7 @@ MonoBehaviour:
   slashColor: {r: 1, g: 1, b: 1, a: 1}
   initialDelay: 3
   attackInterval: 5
+  closeRangeThreshold: 5
   patterns:
   - name: "\uC218\uD3C9 \uBCA0\uAE30"
     startOffset: {x: 1, y: 0.5}
@@ -8903,6 +8905,21 @@ BoxCollider2D:
   m_AutoTiling: 0
   m_Size: {x: 1.0142584, y: 1.5095904}
   m_EdgeRadius: 0
+--- !u!114 &2014893185
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2014893179}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ed6eb0c1dd897453bba6fb26f5213e1b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyAI
+  moveSpeed: 1.5
+  attackRange: 5
+  visualTransform: {fileID: 0}
 --- !u!1 &2029415692
 GameObject:
   m_ObjectHideFlags: 0

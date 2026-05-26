@@ -27,6 +27,9 @@ public class EnemyAttack : MonoBehaviour
     public float initialDelay = 3f;
     public float attackInterval = 5f;
 
+    [Header("AI 패턴 전환 거리")]
+    public float closeRangeThreshold = 5f;
+
     [Header("공격 패턴")]
     public AttackPattern[] patterns = new AttackPattern[]
     {
@@ -48,6 +51,8 @@ public class EnemyAttack : MonoBehaviour
     private float attackTimer = 0f;
     private bool attackCycleRunning = false;
     private bool battleWasRunning = false;
+
+    public bool IsAttackCycleRunning => attackCycleRunning;
 
     void Start()
     {
@@ -128,9 +133,25 @@ public class EnemyAttack : MonoBehaviour
     {
         if (patterns.Length == 0) return;
 
+        // RealBattle에서는 거리에 따라 패턴 선택
+        int[] candidates;
+        bool useDistanceAI = TutorialManager.instance == null ||
+                             TutorialManager.instance.currentStep == TutorialManager.TutorialStep.RealBattle;
+
+        if (useDistanceAI && playerTransform != null)
+        {
+            float dist = Mathf.Abs(transform.position.x - playerTransform.position.x);
+            // 근거리: 수평 베기(0), 찌르기(3) / 원거리: 대각선(1, 2)
+            candidates = dist < closeRangeThreshold ? new int[] { 0, 3 } : new int[] { 1, 2 };
+        }
+        else
+        {
+            candidates = new int[] { 0, 1, 2, 3 };
+        }
+
         int index;
-        do { index = Random.Range(0, patterns.Length); }
-        while (index == lastPatternIndex && patterns.Length > 1);
+        do { index = candidates[Random.Range(0, candidates.Length)]; }
+        while (index == lastPatternIndex && candidates.Length > 1);
         lastPatternIndex = index;
 
         AttackPattern p = patterns[index];

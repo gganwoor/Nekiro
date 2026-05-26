@@ -96,8 +96,16 @@ public class PlayerAttack : MonoBehaviour
 
     public bool IsAttacking => isAttacking;
 
+    void ResetAttackState()
+    {
+        isAttacking = false;
+        attackQueued = false;
+        hitExecuted = false;
+    }
+
     public void PlayParry()
     {
+        ResetAttackState();
         animator.Play(parryClip, 0, 0f);
         if (parrySound != null) audioSource.PlayOneShot(parrySound);
         StartCoroutine(WaitForParryEnd());
@@ -105,6 +113,7 @@ public class PlayerAttack : MonoBehaviour
 
     public void PlayHit()
     {
+        ResetAttackState();
         animator.Play(hitClip, 0, 0f);
         StartCoroutine(WaitForHitEnd());
     }
