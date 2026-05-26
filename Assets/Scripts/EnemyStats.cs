@@ -8,6 +8,12 @@ public class EnemyStats : MonoBehaviour
     public float maxStamina = 100f;
     public float currentStamina;
 
+    [Header("스태미나 회복")]
+    public float staminaRegenRate = 5f;
+    public float regenDelay = 2f;
+
+    private float regenTimer = 0f;
+
     [Header("UI 연결")]
     public RectTransform hpBar;
     public RectTransform staminaBar;
@@ -17,6 +23,21 @@ public class EnemyStats : MonoBehaviour
         currentHP = maxHP;
         currentStamina = maxStamina;
         UpdateUI();
+    }
+
+    void Update()
+    {
+        if (regenTimer > 0f)
+        {
+            regenTimer -= Time.deltaTime;
+            return;
+        }
+
+        if (currentStamina < maxStamina)
+        {
+            currentStamina = Mathf.Min(currentStamina + staminaRegenRate * Time.deltaTime, maxStamina);
+            UpdateUI();
+        }
     }
 
     public void TakeDamage(float amount)
@@ -39,6 +60,7 @@ public class EnemyStats : MonoBehaviour
     {
         float prev = currentStamina;
         currentStamina = Mathf.Clamp(currentStamina - amount, 0, maxStamina);
+        regenTimer = regenDelay;
         UpdateUI();
 
         if (prev > 0 && currentStamina <= 0 &&
@@ -52,6 +74,14 @@ public class EnemyStats : MonoBehaviour
     public void RecoverStamina(float amount)
     {
         currentStamina = Mathf.Clamp(currentStamina + amount, 0, maxStamina);
+        UpdateUI();
+    }
+
+    public void ResetStats()
+    {
+        currentHP = maxHP;
+        currentStamina = maxStamina;
+        regenTimer = 0f;
         UpdateUI();
     }
 

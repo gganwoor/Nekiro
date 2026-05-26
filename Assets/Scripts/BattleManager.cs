@@ -1,90 +1,148 @@
 using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 public class BattleManager : MonoBehaviour
 {
     public static BattleManager instance;
 
-    public enum BattlePhase { Idle, Design, Execute, Result }
+    public enum BattlePhase { Idle, Battle }
     public BattlePhase currentPhase = BattlePhase.Idle;
 
-    [Header("페이즈 시간")]
+    [Header("전투 시작 대기")]
     public float idleTime = 3f;
-    public float designTime = 4f;
+
+    [Header("테스트")]
+    public bool autoPhaseEnabled = true;
 
     [Header("슬로우 모션")]
     public float slowMotionScale = 0.15f;
 
     [Header("카메라 줌")]
     public float zoomedCamSize = 3f;
-    public Vector3 zoomedCamPos = new Vector3(-3f, -0.5f, -10f);
+    public Vector2 zoomedCamOffset = new Vector2(0f, 0.5f);
     public float transitionDuration = 0.6f;
+    public float zoomOutDuration = 0.3f;
+
+    [Header("화면 어둡기")]
+    public Image darkOverlay;
+    public float darkOverlayAlpha = 0.4f;
+
+    [Header("숨 참기")]
+    public float holdBreathDrainRate = 15f;
 
     [Header("플레이어 공격")]
     public KeyCode attackKey = KeyCode.Space;
-    public float playerAttackDamage = 20f;
 
-    private EnemyAttack enemyAttack;
+    private Vector3 zoomedCamPos;
     private TrajectoryDrawer trajectoryDrawer;
-    private EnemyStats enemyStats;
-    private Animator playerAnimator;
+    private PlayerStats playerStats;
+    private Transform playerTransform;
     private Camera mainCamera;
     private float originalCamSize;
     private Vector3 originalCamPos;
     private bool battleEnded = false;
+    private bool isBattleActive = false;
+    private bool isBattleRunning = false;
+    private bool isHoldingBreath = false;
+    private bool isTransitioning = false;
+    private Coroutine transitionCoroutine;
 
-    void Awake()
-    {
-        instance = this;
-    }
+    public bool IsBattleActive => isBattleActive;
+    public bool IsBattleRunning => isBattleRunning;
+    public bool IsHoldingBreath => isHoldingBreath;
+    public bool battleCycleComplete = false;
+
+    void Awake() { instance = this; }
 
     void Start()
     {
-        enemyAttack = FindObjectOfType<EnemyAttack>();
         trajectoryDrawer = FindObjectOfType<TrajectoryDrawer>();
-        enemyStats = FindObjectOfType<EnemyStats>();
-
-        PlayerStats ps = FindObjectOfType<PlayerStats>();
-        if (ps != null)
-            playerAnimator = ps.GetComponentInChildren<Animator>();
+        playerStats = FindObjectOfType<PlayerStats>();
+        playerTransform = FindObjectOfType<PlayerMovement>()?.transform;
 
         mainCamera = Camera.main;
         originalCamSize = mainCamera.orthographicSize;
         originalCamPos = mainCamera.transform.position;
 
-        foreach (TutorialManager tm in FindObjectsOfType<TutorialManager>())
-            tm.enabled = false;
-
         StartCoroutine(BattleLoop());
+    }
+
+    public void StartBattle()
+    {
+        if (isBattleRunning || isBattleActive || battleEnded) return;
+        isBattleActive = true;
     }
 
     void Update()
     {
         if (battleEnded) return;
 
-        if (currentPhase == BattlePhase.Idle && Input.GetKeyDown(attackKey))
-        {
-            if (enemyStats != null)
-            {
-                if (enemyStats.currentStamina > 0)
-                    enemyStats.UseStamina(playerAttackDamage);
-                else
-                    enemyStats.TakeDamage(playerAttackDamage);
+        if (autoPhaseEnabled && !isBattleRunning && currentPhase == BattlePhase.Idle)
+            StartBattle();
 
-                EnemyHitFlash.instance?.Flash();
-                CameraShake.instance.Shake(0.1f, 0.08f);
-            }
+        if (currentPhase != BattlePhase.Battle) return;
+
+        // 숨 참기 진입
+        if (Input.GetMouseButtonDown(1) && !isHoldingBreath && !isTransitioning)
+        {
+            bool canAttack = PlayerAttack.instance == null || !PlayerAttack.instance.IsAttacking;
+            if (canAttack && (playerStats == null || playerStats.currentStamina > 0))
+                StartHoldBreath();
         }
+
+        // 숨 참기 해제
+        if (Input.GetMouseButtonUp(1) && isHoldingBreath)
+            EndHoldBreath();
+
+        // 스태미나 소모
+        if (isHoldingBreath && playerStats != null)
+        {
+            playerStats.UseStamina(holdBreathDrainRate * Time.unscaledDeltaTime);
+            if (playerStats.currentStamina <= 0)
+                EndHoldBreath();
+        }
+
+        // 공격 키 (숨 참기 중에는 불가)
+        if (!isHoldingBreath && !isTransitioning && Input.GetKeyDown(attackKey))
+            PlayerAttack.instance?.TriggerAttack();
+    }
+
+    void StartHoldBreath()
+    {
+        isHoldingBreath = true;
+        originalCamPos = mainCamera.transform.position;
+        originalCamSize = mainCamera.orthographicSize;
+        if (playerTransform != null)
+            zoomedCamPos = new Vector3(playerTransform.position.x + zoomedCamOffset.x,
+                                       playerTransform.position.y + zoomedCamOffset.y, -10f);
+
+        PlayerAttack.instance?.SetPreparePose(true);
+        trajectoryDrawer.SetDrawingEnabled(true);
+        if (transitionCoroutine != null) StopCoroutine(transitionCoroutine);
+        transitionCoroutine = StartCoroutine(TransitionToDesign());
+    }
+
+    public void EndHoldBreath()
+    {
+        isHoldingBreath = false;
+        trajectoryDrawer.SetDrawingEnabled(false);
+        PlayerAttack.instance?.SetPreparePose(false);
+        if (transitionCoroutine != null) StopCoroutine(transitionCoroutine);
+        transitionCoroutine = StartCoroutine(TransitionToNormal());
     }
 
     public void OnEnemyDead()
     {
         if (battleEnded) return;
         battleEnded = true;
+        isBattleRunning = false;
+        isHoldingBreath = false;
         StopAllCoroutines();
         Time.timeScale = 1f;
         Time.fixedDeltaTime = 0.02f;
+        if (darkOverlay != null) darkOverlay.color = new Color(0f, 0f, 0f, 0f);
         StartCoroutine(BattleEndRoutine(true));
     }
 
@@ -92,9 +150,12 @@ public class BattleManager : MonoBehaviour
     {
         if (battleEnded) return;
         battleEnded = true;
+        isBattleRunning = false;
+        isHoldingBreath = false;
         StopAllCoroutines();
         Time.timeScale = 1f;
         Time.fixedDeltaTime = 0.02f;
+        if (darkOverlay != null) darkOverlay.color = new Color(0f, 0f, 0f, 0f);
         StartCoroutine(BattleEndRoutine(false));
     }
 
@@ -110,40 +171,28 @@ public class BattleManager : MonoBehaviour
         while (true)
         {
             currentPhase = BattlePhase.Idle;
-            trajectoryDrawer.SetDrawingEnabled(false);
-            yield return new WaitForSeconds(idleTime);
-
-            enemyAttack.StartAttack();
-            yield return StartCoroutine(TransitionToDesign());
-
-            currentPhase = BattlePhase.Design;
-            trajectoryDrawer.ResetJudgement();
-            trajectoryDrawer.SetDrawingEnabled(true);
-
-            float elapsed = 0f;
-            while (elapsed < designTime && !trajectoryDrawer.isReadyToJudge)
-            {
-                elapsed += Time.unscaledDeltaTime;
-                yield return null;
-            }
+            isBattleRunning = false;
+            if (PlayerMovement.instance != null) PlayerMovement.instance.isTravelMode = autoPhaseEnabled;
+            if (CameraFollow.instance != null) CameraFollow.instance.followEnabled = true;
             trajectoryDrawer.SetDrawingEnabled(false);
 
-            yield return StartCoroutine(TransitionToNormal());
+            yield return new WaitUntil(() => isBattleActive);
+            isBattleActive = false;
 
-            currentPhase = BattlePhase.Execute;
-            trajectoryDrawer.ExecuteJudgement();
-            yield return new WaitForSeconds(1f);
+            currentPhase = BattlePhase.Battle;
+            isBattleRunning = true;
+            if (PlayerMovement.instance != null) PlayerMovement.instance.isTravelMode = false;
+            if (CameraFollow.instance != null) CameraFollow.instance.followEnabled = false;
+            yield return new WaitForSecondsRealtime(idleTime);
 
-            currentPhase = BattlePhase.Result;
-            yield return new WaitForSeconds(0.5f);
+            // EnemyAttack이 자체 타이머로 공격 관리
+            while (!battleEnded) yield return null;
         }
     }
 
     IEnumerator TransitionToDesign()
     {
-        if (playerAnimator != null)
-            playerAnimator.SetBool("Prepare", true);
-
+        isTransitioning = true;
         float elapsed = 0f;
         while (elapsed < transitionDuration)
         {
@@ -152,6 +201,7 @@ public class BattleManager : MonoBehaviour
             mainCamera.transform.position = Vector3.Lerp(originalCamPos, zoomedCamPos, t);
             Time.timeScale = Mathf.Lerp(1f, slowMotionScale, t);
             Time.fixedDeltaTime = 0.02f * Time.timeScale;
+            if (darkOverlay != null) darkOverlay.color = new Color(0f, 0f, 0f, Mathf.Lerp(0f, darkOverlayAlpha, t));
             elapsed += Time.unscaledDeltaTime;
             yield return null;
         }
@@ -160,22 +210,22 @@ public class BattleManager : MonoBehaviour
         mainCamera.transform.position = zoomedCamPos;
         Time.timeScale = slowMotionScale;
         Time.fixedDeltaTime = 0.02f * slowMotionScale;
+        if (darkOverlay != null) darkOverlay.color = new Color(0f, 0f, 0f, darkOverlayAlpha);
+        isTransitioning = false;
     }
 
     IEnumerator TransitionToNormal()
     {
-        if (playerAnimator != null)
-            playerAnimator.SetBool("Prepare", false);
-
+        isTransitioning = true;
         float elapsed = 0f;
-        float halfDuration = transitionDuration * 0.5f;
-        while (elapsed < halfDuration)
+        while (elapsed < zoomOutDuration)
         {
-            float t = Mathf.SmoothStep(0f, 1f, elapsed / halfDuration);
+            float t = Mathf.SmoothStep(0f, 1f, elapsed / zoomOutDuration);
             mainCamera.orthographicSize = Mathf.Lerp(zoomedCamSize, originalCamSize, t);
             mainCamera.transform.position = Vector3.Lerp(zoomedCamPos, originalCamPos, t);
             Time.timeScale = Mathf.Lerp(slowMotionScale, 1f, t);
             Time.fixedDeltaTime = 0.02f * Time.timeScale;
+            if (darkOverlay != null) darkOverlay.color = new Color(0f, 0f, 0f, Mathf.Lerp(darkOverlayAlpha, 0f, t));
             elapsed += Time.unscaledDeltaTime;
             yield return null;
         }
@@ -184,5 +234,7 @@ public class BattleManager : MonoBehaviour
         mainCamera.transform.position = originalCamPos;
         Time.timeScale = 1f;
         Time.fixedDeltaTime = 0.02f;
+        if (darkOverlay != null) darkOverlay.color = new Color(0f, 0f, 0f, 0f);
+        isTransitioning = false;
     }
 }

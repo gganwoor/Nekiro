@@ -1,10 +1,11 @@
 fileFormatVersion: 2
-guid: ce54b348581ea4d5097d09ae51e91dcf
+guid: c9d469f201781401196ab64efd0c92a9
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -8935681571069473117
-    second: 9E3AF6F0-9039-407D-94B3-DE16741C6F11_0
+      213: -4870842910450878588
+    second: "ChatGPT Image 2026\u1102\u1167\u11AB 5\u110B\u116F\u11AF 21\u110B\u1175\u11AF
+      \u110B\u1169\u110C\u1165\u11AB 02_01_32_0"
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -113,23 +114,23 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: 9E3AF6F0-9039-407D-94B3-DE16741C6F11_0
+      name: MoonXBackground_0
       rect:
         serializedVersion: 2
         x: 0
         y: 0
-        width: 1658
-        height: 144
+        width: 1660
+        height: 948
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: 3ae466254f41ef380800000000000000
-      internalID: -8935681571069473117
+      spriteID: bdf039a651ce9470fa04940a4dd454c6
+      internalID: -1233847907
       vertices: []
       indices: 
       edges: []
@@ -138,7 +139,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 
+    spriteID: 63bd47cdcc730478eaefb28e6c13b118
     internalID: 0
     vertices: []
     indices: 
@@ -146,9 +147,11 @@ TextureImporter:
     weights: []
     secondaryTextures: []
     spriteCustomMetadata:
-      entries: []
+      entries:
+      - key: SpriteEditor.SliceSettings
+        value: '{"sliceOnImport":false,"gridCellCount":{"x":1.0,"y":1.0},"gridSpriteSize":{"x":64.0,"y":64.0},"gridSpriteOffset":{"x":0.0,"y":0.0},"gridSpritePadding":{"x":0.0,"y":0.0},"pivot":{"x":0.5,"y":0.5},"pivotPixels":{"x":0.0,"y":0.0},"autoSlicingMethod":0,"spriteAlignment":0,"pivotUnitMode":0,"slicingType":0,"keepEmptyRects":false,"isAlternate":false}'
     nameFileIdTable:
-      9E3AF6F0-9039-407D-94B3-DE16741C6F11_0: -8935681571069473117
+      MoonXBackground_0: -1233847907
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

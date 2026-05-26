@@ -10,6 +10,9 @@ public class PlayerStats : MonoBehaviour
 
     [Header("스태미나 회복")]
     public float staminaRegenRate = 8f;
+    public float regenDelay = 2f;
+
+    private float regenTimer = 0f;
 
     [Header("UI연결")]
     public RectTransform hpBar;
@@ -35,6 +38,7 @@ public class PlayerStats : MonoBehaviour
     public void UseStamina(float amount)
     {
         currentStamina = Mathf.Clamp(currentStamina - amount, 0, maxStamina);
+        regenTimer = regenDelay;
         UpdateUI();
     }
 
@@ -46,7 +50,17 @@ public class PlayerStats : MonoBehaviour
 
     void Update()
     {
-        UpdateUI();
+        if (regenTimer > 0f)
+        {
+            regenTimer -= Time.deltaTime;
+            return;
+        }
+
+        if (currentStamina < maxStamina)
+        {
+            currentStamina = Mathf.Min(currentStamina + staminaRegenRate * Time.deltaTime, maxStamina);
+            UpdateUI();
+        }
     }
 
     void UpdateUI()

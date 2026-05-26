@@ -60,6 +60,7 @@ public class TrajectoryDrawer : MonoBehaviour
             isDrawing = false;
             lineRenderer.positionCount = 0;
             isReadyToJudge = true;
+            BattleManager.instance?.EndHoldBreath();
         }
     }
 
@@ -107,7 +108,7 @@ public class TrajectoryDrawer : MonoBehaviour
 
         if (parrySuccess)
         {
-            Debug.Log("패링 성공");
+            PlayerAttack.instance?.PlayParry();
             if (enemyStats.currentStamina > 0)
                 enemyStats.UseStamina(20f);
             else
@@ -116,14 +117,22 @@ public class TrajectoryDrawer : MonoBehaviour
             EnemyHitFlash.instance?.Flash();
             CameraShake.instance.Shake(0.15f, 0.1f);
             HitStop.instance.Stop(0.08f);
+            Vector3 effectPos = Vector3.Lerp(enemyAttack.attackStart, enemyAttack.attackEnd, 0.25f);
+            ParryEffect.instance?.Play(effectPos);
+
+            if (TutorialManager.instance != null &&
+                TutorialManager.instance.currentStep == TutorialManager.TutorialStep.ParryPractice)
+                TutorialManager.instance.CompleteStep();
+        }
+        else if (PlayerDash.instance != null && PlayerDash.instance.IsInvincible)
+        {
+            // 대시 회피 성공 — 피해 없음
         }
         else
         {
-            Debug.Log("패링 실패");
-            if (playerStats.currentStamina > 0)
-                playerStats.UseStamina(20f);
-            else
-                playerStats.TakeDamage(30f);
+            PlayerAttack.instance?.PlayHit();
+            playerStats.UseStamina(20f);
+            playerStats.TakeDamage(10f);
             CameraShake.instance.Shake(0.3f, 0.2f);
             VignetteEffect.instance.Flash();
         }
