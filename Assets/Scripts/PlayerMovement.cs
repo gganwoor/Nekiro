@@ -1,14 +1,19 @@
 using UnityEngine;
+using System.Collections;
 
 public class PlayerMovement : MonoBehaviour
 {
     public static PlayerMovement instance;
 
-    public float moveSpeed = 3f;
+    public float moveSpeed = 5f;
 
     [Header("이동 범위 (전투 모드)")]
     public float minX = -20f;
     public float maxX = 100f;
+
+    [Header("넉백")]
+    public float knockbackDistance = 0.8f;
+    public float knockbackDuration = 0.15f;
 
     public bool isTravelMode = false;
 
@@ -55,8 +60,9 @@ public class PlayerMovement : MonoBehaviour
         bool holdingBreath = BattleManager.instance != null && BattleManager.instance.IsHoldingBreath;
         bool attacking = PlayerAttack.instance != null && PlayerAttack.instance.IsAttacking;
         bool dashing = PlayerDash.instance != null && PlayerDash.instance.IsDashing;
+        bool hit = PlayerAttack.instance != null && PlayerAttack.instance.IsHit;
 
-        if (holdingBreath || attacking || dashing)
+        if (holdingBreath || attacking || dashing || hit)
         {
             animator.SetBool("Run", false);
             return;
@@ -72,6 +78,27 @@ public class PlayerMovement : MonoBehaviour
 
         if (h != 0)
             facingLeft = h < 0;
+    }
+
+    public void ApplyKnockback(float direction)
+    {
+        StartCoroutine(KnockbackRoutine(direction));
+    }
+
+    IEnumerator KnockbackRoutine(float direction)
+    {
+        Vector3 start = transform.position;
+        Vector3 end = start + new Vector3(direction * knockbackDistance, 0f, 0f);
+        end.x = Mathf.Clamp(end.x, minX, maxX);
+
+        float elapsed = 0f;
+        while (elapsed < knockbackDuration)
+        {
+            transform.position = Vector3.Lerp(start, end, Mathf.SmoothStep(0f, 1f, elapsed / knockbackDuration));
+            elapsed += Time.unscaledDeltaTime;
+            yield return null;
+        }
+        transform.position = end;
     }
 
     void LateUpdate()

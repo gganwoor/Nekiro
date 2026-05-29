@@ -11,8 +11,8 @@ public class PlayerAttack : MonoBehaviour
     public LayerMask enemyLayer;
 
     [Header("데미지")]
-    public float staminaDamage = 20f;
     public float hpDamage = 20f;
+    public float blockedHpDamage = 5f;
 
     [Header("공격 스태미나 소모")]
     public float attackStaminaCost = 10f;
@@ -33,10 +33,15 @@ public class PlayerAttack : MonoBehaviour
     public string hitClip = "Hit";
     public float hitHoldTime = 0.5f;
 
+    [Header("애니메이션 속도")]
+    public float attackAnimSpeed = 1.6f;
+
     private Animator animator;
     private AudioSource audioSource;
     private PlayerStats playerStats;
     private bool isAttacking = false;
+    private bool isHit = false;
+    public bool IsHit => isHit;
     private bool hitExecuted = false;
     private bool attackQueued = false;
     private int transitionBlockFrame = -1;
@@ -103,17 +108,20 @@ public class PlayerAttack : MonoBehaviour
         hitExecuted = false;
     }
 
-    public void PlayParry()
+    public void PlayParry(bool withSound = true)
     {
         ResetAttackState();
+        animator.speed = 1f;
         animator.Play(parryClip, 0, 0f);
-        if (parrySound != null) audioSource.PlayOneShot(parrySound);
+        if (withSound && parrySound != null) audioSource.PlayOneShot(parrySound);
         StartCoroutine(WaitForParryEnd());
     }
 
     public void PlayHit()
     {
         ResetAttackState();
+        animator.speed = 1f;
+        isHit = true;
         animator.Play(hitClip, 0, 0f);
         StartCoroutine(WaitForHitEnd());
     }
@@ -133,6 +141,7 @@ public class PlayerAttack : MonoBehaviour
             yield return new WaitForSeconds(hitHoldTime);
             animator.Play("Idle", 0, 0f);
         }
+        isHit = false;
     }
 
     IEnumerator WaitForParryEnd()
@@ -151,6 +160,17 @@ public class PlayerAttack : MonoBehaviour
         }
     }
 
+    public void PlayCounterAnim()
+    {
+        StopAllCoroutines();
+        ResetAttackState();
+        isAttacking = true;
+        hitExecuted = true;
+        currentAttackClip = attackClips[0];
+        animator.speed = attackAnimSpeed;
+        animator.Play(currentAttackClip, 0, 0f);
+    }
+
     public void SetPreparePose(bool active)
     {
         if (active)
@@ -167,6 +187,7 @@ public class PlayerAttack : MonoBehaviour
             isAttacking = true;
             hitExecuted = false;
             currentAttackClip = attackClips[0];
+            animator.speed = attackAnimSpeed;
             animator.Play(currentAttackClip, 0, 0f);
         }
         else if (!attackQueued && Time.frameCount != transitionBlockFrame)
@@ -202,6 +223,7 @@ public class PlayerAttack : MonoBehaviour
                 attackQueued = false;
                 hitExecuted = false;
                 currentAttackClip = currentAttackClip == attackClips[0] ? attackClips[1] : attackClips[0];
+                animator.speed = attackAnimSpeed;
                 animator.Play(currentAttackClip, 0, 0f);
             }
             else
@@ -218,16 +240,24 @@ public class PlayerAttack : MonoBehaviour
         Collider2D hit = Physics2D.OverlapBox(hitboxPoint.position, hitboxSize, 0f, enemyLayer);
         if (hit == null) return;
 
+        TutorialScarecrow scarecrow = hit.GetComponentInParent<TutorialScarecrow>();
+        if (scarecrow != null)
+        {
+            scarecrow.OnHit();
+            CameraShake.instance?.Shake(0.1f, 0.07f);
+            HitStop.instance?.Stop(0.05f);
+            return;
+        }
+
         EnemyStats stats = hit.GetComponentInParent<EnemyStats>();
         if (stats == null) return;
 
-        if (stats.currentStamina > 0)
-            stats.UseStamina(staminaDamage);
-        else
-            stats.TakeDamage(hpDamage);
+        float dmg = stats.IsGroggy ? hpDamage : blockedHpDamage;
+        stats.TakeDamage(dmg);
 
         EnemyHitFlash.instance?.Flash();
         CameraShake.instance.Shake(0.1f, 0.08f);
+        EnemyAI.instance?.OnHit();
     }
 
     void OnAttackEnd()
@@ -235,6 +265,7 @@ public class PlayerAttack : MonoBehaviour
         isAttacking = false;
         hitExecuted = false;
         attackQueued = false;
+        animator.speed = 1f;
         animator.Play("Idle", 0, 0f);
         SetHitboxVisualColor(new Color(1f, 0.5f, 0f, 0.8f));
     }

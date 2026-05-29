@@ -35,6 +35,9 @@ public class PlayerDash : MonoBehaviour
             float dir = Input.GetAxisRaw("Horizontal");
             if (dir == 0f)
                 dir = (PlayerMovement.instance != null && PlayerMovement.instance.FacingLeft) ? -1f : 1f;
+            if (TutorialManager.instance != null &&
+                TutorialManager.instance.currentStep == TutorialManager.TutorialStep.Dodge)
+                TutorialManager.instance.CompleteStep();
             StartCoroutine(DashRoutine(dir));
         }
     }

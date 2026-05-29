@@ -8,6 +8,11 @@ public class TrajectoryDrawer : MonoBehaviour
     public Color lineColor = Color.white;
     public float minPointDistance = 0.1f;
 
+    [Header("패링 데미지")]
+    public float parryStaminaDrain = 20f;
+    public float parryHpDamage = 35f;
+    public float parryBlockedHpDamage = 10f;
+
     private LineRenderer lineRenderer;
     private List<Vector3> points = new List<Vector3>();
     private bool isDrawing = false;
@@ -16,6 +21,8 @@ public class TrajectoryDrawer : MonoBehaviour
     private PlayerStats playerStats;
     private EnemyAttack enemyAttack;
     private EnemyStats enemyStats;
+    private Transform playerTransform;
+    private PlayerAttack playerAttack;
 
     void Awake()
     {
@@ -30,9 +37,11 @@ public class TrajectoryDrawer : MonoBehaviour
 
     void Start()
     {
-        playerStats = FindObjectOfType<PlayerStats>();
-        enemyAttack = FindObjectOfType<EnemyAttack>();
-        enemyStats = FindObjectOfType<EnemyStats>();
+        playerStats = FindFirstObjectByType<PlayerStats>();
+        enemyAttack = FindFirstObjectByType<EnemyAttack>();
+        enemyStats = FindFirstObjectByType<EnemyStats>();
+        playerTransform = FindFirstObjectByType<PlayerMovement>()?.transform;
+        playerAttack = FindFirstObjectByType<PlayerAttack>();
     }
 
     [HideInInspector] public bool isReadyToJudge = false;
@@ -61,6 +70,8 @@ public class TrajectoryDrawer : MonoBehaviour
             lineRenderer.positionCount = 0;
             isReadyToJudge = true;
             BattleManager.instance?.EndHoldBreath();
+            if (points.Count > 0)
+                PlayerAttack.instance?.PlayParry(false);
         }
     }
 
@@ -82,12 +93,23 @@ public class TrajectoryDrawer : MonoBehaviour
         Vector3 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
         mousePos.z = 0f;
 
+        if (!IsInHitbox(mousePos)) return;
+
         if (points.Count > 0 && Vector3.Distance(mousePos, points[points.Count - 1]) < minPointDistance)
             return;
 
         points.Add(mousePos);
         lineRenderer.positionCount = points.Count;
         lineRenderer.SetPositions(points.ToArray());
+    }
+
+    bool IsInHitbox(Vector3 worldPos)
+    {
+        if (playerAttack == null || playerAttack.hitboxPoint == null) return true;
+        Vector3 center = playerAttack.hitboxPoint.position;
+        Vector2 half = playerAttack.hitboxSize * 0.5f;
+        return Mathf.Abs(worldPos.x - center.x) <= half.x &&
+               Mathf.Abs(worldPos.y - center.y) <= half.y;
     }
 
     public void SetDrawingEnabled(bool enabled)
@@ -109,19 +131,20 @@ public class TrajectoryDrawer : MonoBehaviour
         if (parrySuccess)
         {
             PlayerAttack.instance?.PlayParry();
-            if (enemyStats.currentStamina > 0)
-                enemyStats.UseStamina(20f);
-            else
-                enemyStats.TakeDamage(20f);
+            enemyStats.UseStamina(parryStaminaDrain);
+            float dmg = enemyStats.IsGroggy ? parryHpDamage : parryBlockedHpDamage;
+            enemyStats.TakeDamage(dmg);
             playerStats.RecoverStamina(10f);
             EnemyHitFlash.instance?.Flash();
             CameraShake.instance.Shake(0.15f, 0.1f);
             HitStop.instance.Stop(0.08f);
+            EnemyAI.instance?.OnHit();
             Vector3 effectPos = Vector3.Lerp(enemyAttack.attackStart, enemyAttack.attackEnd, 0.25f);
             ParryEffect.instance?.Play(effectPos);
+            BattleManager.instance?.OpenCounterWindow();
 
             if (TutorialManager.instance != null &&
-                TutorialManager.instance.currentStep == TutorialManager.TutorialStep.ParryPractice)
+                TutorialManager.instance.currentStep == TutorialManager.TutorialStep.Parry)
                 TutorialManager.instance.CompleteStep();
         }
         else if (PlayerDash.instance != null && PlayerDash.instance.IsInvincible)
@@ -130,11 +153,19 @@ public class TrajectoryDrawer : MonoBehaviour
         }
         else
         {
-            PlayerAttack.instance?.PlayHit();
-            playerStats.UseStamina(20f);
-            playerStats.TakeDamage(10f);
-            CameraShake.instance.Shake(0.3f, 0.2f);
-            VignetteEffect.instance.Flash();
+            if (enemyAttack != null && enemyAttack.PlayerWasInPath)
+            {
+                PlayerAttack.instance?.PlayHit();
+                playerStats.UseStamina(20f);
+                playerStats.TakeDamage(10f);
+                CameraShake.instance.Shake(0.3f, 0.2f);
+                VignetteEffect.instance.Flash();
+
+                float knockDir = 0f;
+                if (playerTransform != null && EnemyAI.instance != null && EnemyAI.instance.visualTransform != null)
+                    knockDir = playerTransform.position.x < EnemyAI.instance.visualTransform.position.x ? -1f : 1f;
+                PlayerMovement.instance?.ApplyKnockback(knockDir);
+            }
         }
 
         points.Clear();
